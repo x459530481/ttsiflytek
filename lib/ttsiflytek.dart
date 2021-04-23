@@ -11,7 +11,10 @@ class Ttsiflytek {
     return version;
   }
 
-  static Future<void> initTTS({String appid}) async {
+  static Future<void> initTTS({String appid,Future<dynamic> Function(MethodCall call) handler}) async {
+    if(handler != null){
+      _channel.setMethodCallHandler(handler);
+    }
     if(appid != null){
       return _channel.invokeMethod('initTTS',{'appid':appid});
     }else{

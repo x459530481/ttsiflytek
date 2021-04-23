@@ -20,6 +20,7 @@ class TtsiflytekPlugin: MethodCallHandler {
 
   companion object {
     var mContext: Context? = null
+    var methodChannel:MethodChannel? = null
     @JvmStatic
     fun registerWith(registrar: Registrar) {
 //      registrar
@@ -27,8 +28,8 @@ class TtsiflytekPlugin: MethodCallHandler {
 //              .registerViewFactory(
 //                      "plugins.xiaosi.ttsiflytek", ScanViewFactory(registrar.messenger()));
       mContext = registrar.activity().applicationContext
-      val channel = MethodChannel(registrar.messenger(), "ttsiflytek")
-      channel.setMethodCallHandler(TtsiflytekPlugin())
+      methodChannel = MethodChannel(registrar.messenger(), "ttsiflytek")
+      methodChannel!!.setMethodCallHandler(TtsiflytekPlugin())
     }
   }
 
@@ -48,7 +49,9 @@ class TtsiflytekPlugin: MethodCallHandler {
         appid = call.argument<Any>("appid").toString()
       }
       if(appid.equals("")){
-        println("appid is null !!!!!!!!!!")
+        if(methodChannel != null){
+          methodChannel!!.invokeMethod("printLog", "appid is null !!!!!!!!!!")
+        }
         return
       }
       param.append("appid=$appid")
@@ -64,7 +67,9 @@ class TtsiflytekPlugin: MethodCallHandler {
       // 开始合成
       // 收到onCompleted 回调时，合成结束、生成合成音频
       // 合成的音频格式：只支持pcm格式
-      println("TTS:play")
+      if(methodChannel != null){
+        methodChannel!!.invokeMethod("printLog", "TTS:play")
+      }
       var text = "测试文字"
       if (call.hasArgument("txt")) {
         text = call.argument<Any>("txt").toString()
@@ -74,7 +79,6 @@ class TtsiflytekPlugin: MethodCallHandler {
       }
       // 设置参数
       setParam()
-      println("准备点击： " + System.currentTimeMillis())
       val code: Int = mTts?.startSpeaking(text, mTtsListener) ?: 999
       //			/**
 //			 * 只保存音频不进行播放接口,调用此接口请注释startSpeaking接口
@@ -83,26 +87,36 @@ class TtsiflytekPlugin: MethodCallHandler {
 //			String path = Environment.getExternalStorageDirectory()+"/tts.pcm";
 //			int code = mTts.synthesizeToUri(text, path, mTtsListener);
       if (code != ErrorCode.SUCCESS) {
-        println("语音合成失败,错误码: $code,请点击网址https://www.xfyun.cn/document/error-code查询解决方案")
+        if(methodChannel != null){
+          methodChannel!!.invokeMethod("printLog", "语音合成失败,错误码: $code,请点击网址https://www.xfyun.cn/document/error-code查询解决方案")
+        }
       }
       result.success("Success")
     } else if (call.method == "cancel") {
       // 取消合成
-      println("TTS:cancel")
+      if(methodChannel != null){
+        methodChannel!!.invokeMethod("printLog", "TTS:cancel")
+      }
       mTts?.stopSpeaking()
       result.success("Success")
     } else if (call.method == "pause") {
-      println("TTS:pause")
+      if(methodChannel != null){
+        methodChannel!!.invokeMethod("printLog", "TTS:pause")
+      }
       // 暂停播放
       mTts?.pauseSpeaking()
       result.success("Success")
     } else if (call.method == "resume") {
-      println("TTS:resume")
+      if(methodChannel != null){
+        methodChannel!!.invokeMethod("printLog", "TTS:resume")
+      }
       // 继续播放
       mTts?.resumeSpeaking()
       result.success("Success")
     } else if (call.method == "destroy") {
-      println("TTS:destroy")
+      if(methodChannel != null){
+        methodChannel!!.invokeMethod("printLog", "TTS:destroy")
+      }
       if (null != mTts) {
         mTts?.stopSpeaking()
         // 退出时释放连接
@@ -122,9 +136,13 @@ class TtsiflytekPlugin: MethodCallHandler {
    * 初始化监听。
    */
   private val mTtsInitListener = InitListener { code ->
-    println("InitListener init() code = $code")
+    if(methodChannel != null){
+      methodChannel!!.invokeMethod("printLog", "InitListener init() code = $code")
+    }
     if (code != ErrorCode.SUCCESS) {
-      println("初始化失败,错误码：$code,请点击网址https://www.xfyun.cn/document/error-code查询解决方案")
+      if(methodChannel != null){
+        methodChannel!!.invokeMethod("printLog", "初始化失败,错误码：$code,请点击网址https://www.xfyun.cn/document/error-code查询解决方案")
+      }
     } else {
       // 初始化成功，之后可以调用startSpeaking方法
       // 注：有的开发者在onCreate方法中创建完合成对象之后马上就调用startSpeaking进行合成，
@@ -191,35 +209,47 @@ class TtsiflytekPlugin: MethodCallHandler {
     override fun onSpeakBegin() {
       //showTip("开始播放");
 //      Log.d(TtsDemo.TAG,"开始播放："+ System.currentTimeMillis());
-      println("开始播放：" + System.currentTimeMillis())
+      if(methodChannel != null){
+        methodChannel!!.invokeMethod("printLog", "开始播放：" + System.currentTimeMillis())
+      }
     }
 
     override fun onSpeakPaused() {
-      println("暂停播放")
+      if(methodChannel != null){
+        methodChannel!!.invokeMethod("printLog", "暂停播放")
+      }
     }
 
     override fun onSpeakResumed() {
-      println("继续播放")
+      if(methodChannel != null){
+        methodChannel!!.invokeMethod("printLog", "继续播放")
+      }
     }
 
     override fun onBufferProgress(percent: Int, beginPos: Int, endPos: Int,
                                   info: String) {
       // 合成进度
       mPercentForBuffering = percent
-      println(String.format("缓冲进度为%d%%，播放进度为%d%%",
-              mPercentForBuffering, mPercentForPlaying))
+      if(methodChannel != null){
+        methodChannel!!.invokeMethod("printLog", String.format("缓冲进度为%d%%，播放进度为%d%%",
+                mPercentForBuffering, mPercentForPlaying))
+      }
     }
 
     override fun onSpeakProgress(percent: Int, beginPos: Int, endPos: Int) {
       // 播放进度
       mPercentForPlaying = percent
-      println(String.format("缓冲进度为%d%%，播放进度为%d%%",
-              mPercentForBuffering, mPercentForPlaying))
+      if(methodChannel != null){
+        methodChannel!!.invokeMethod("printLog", String.format("缓冲进度为%d%%，播放进度为%d%%",
+                mPercentForBuffering, mPercentForPlaying))
+      }
     }
 
     override fun onCompleted(error: SpeechError) {
       if (error == null) {
-        println("播放完成")
+        if(methodChannel != null){
+          methodChannel!!.invokeMethod("printLog", "播放完成")
+        }
       } else if (error != null) {
         println(error.getPlainDescription(true))
       }
@@ -230,7 +260,9 @@ class TtsiflytekPlugin: MethodCallHandler {
       // 若使用本地能力，会话id为null
       if (SpeechEvent.EVENT_SESSION_ID == eventType) {
         val sid = obj.getString(SpeechEvent.KEY_EVENT_AUDIO_URL)
-        println("session id =$sid")
+        if(methodChannel != null){
+          methodChannel!!.invokeMethod("printLog", "session id =$sid")
+        }
       }
 
       //实时音频流输出参考
